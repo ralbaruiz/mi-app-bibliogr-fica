@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convertidor de Referencias Bibliográficas</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font for a clean look */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 16px; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .input-group label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .input-group textarea,
+        .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db; /* Light gray border */
+            border-radius: 8px;
+            font-size: 1rem;
+            color: #333;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            resize: vertical;
+            min-height: 100px;
+        }
+        .input-group textarea:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #6366f1; /* Indigo focus color */
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        .button {
+            background-color: #4f46e5; /* Indigo */
+            color: white;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            text-align: center;
+            border: none;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+        }
+        .button:hover {
+            background-color: #4338ca; /* Darker indigo on hover */
+            transform: translateY(-1px);
+        }
+        .button:active {
+            transform: translateY(0);
+        }
+        .message-box {
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            text-align: center;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .message-box.loading {
+            background-color: #e0f2fe; /* Light blue */
+            color: #0284c7; /* Darker blue */
+        }
+        .message-box.success {
+            background-color: #dcfce7; /* Light green */
+            color: #16a34a; /* Darker green */
+        }
+        .message-box.error {
+            background-color: #fee2e2; /* Light red */
+            color: #dc2626; /* Darker red */
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-800">Convertidor de Referencias Bibliográficas</h1>
+
+        <div class="input-group">
+            <label for="inputReference">Referencia de entrada (formato actual):</label>
+            <textarea id="inputReference" placeholder="Pega aquí tu referencia bibliográfica (ej: Smith, J. (2020). Título del Artículo. Revista, 1(1), 1-10.)"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="input-group">
+                <label for="currentStyle">Estilo actual:</label>
+                <select id="currentStyle">
+                    <option value="APA">APA</option>
+                    <option value="MLA">MLA</option>
+                    <option value="Chicago">Chicago</option>
+                    <option value="Vancouver">Vancouver</option>
+                    <option value="Harvard">Harvard</option>
+                    <option value="IEEE">IEEE</option>
+                    <option value="Turabian">Turabian</option>
+                    <option value="ACS">ACS</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="desiredStyle">Estilo deseado:</label>
+                <select id="desiredStyle">
+                    <option value="Vancouver">Vancouver</option>
+                    <option value="APA">APA</option>
+                    <option value="MLA">MLA</option>
+                    <option value="Chicago">Chicago</option>
+                    <option value="Harvard">Harvard</option>
+                    <option value="IEEE">IEEE</option>
+                    <option value="Turabian">Turabian</option>
+                    <option value="ACS">ACS</option>
+                </select>
+            </div>
+        </div>
+
+        <button id="convertButton" class="button">Convertir Referencia</button>
+
+        <div id="messageBox" class="message-box hidden"></div>
+
+        <div class="input-group">
+            <label for="outputReference">Referencia convertida:</label>
+            <textarea id="outputReference" readonly placeholder="La referencia convertida aparecerá aquí."></textarea>
+        </div>
+    </div>
+
+    <script type="module">
+        // Get references to DOM elements
+        const inputReference = document.getElementById('inputReference');
+        const currentStyle = document.getElementById('currentStyle');
+        const desiredStyle = document.getElementById('desiredStyle');
+        const convertButton = document.getElementById('convertButton');
+        const outputReference = document.getElementById('outputReference');
+        const messageBox = document.getElementById('messageBox');
+
+        // Styles supported by the model for conversion
+        const supportedStyles = ["APA", "MLA", "Chicago", "Vancouver", "Harvard", "IEEE", "Turabian", "ACS"];
+
+        // Function to display messages to the user
+        function showMessage(message, type) {
+            messageBox.textContent = message;
+            messageBox.className = `message-box ${type}`; // Apply styling based on type
+            messageBox.classList.remove('hidden');
+        }
+
+        // Function to hide messages
+        function hideMessage() {
+            messageBox.classList.add('hidden');
+        }
+
+        // Exponential backoff for API calls
+        async function fetchWithExponentialBackoff(url, options, retries = 5, delay = 1000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.status === 429) { // Too Many Requests
+                        console.warn(`Rate limit hit, retrying in ${delay / 1000}s...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2; // Double the delay for the next retry
+                        continue;
+                    }
+                    return response;
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                    if (i < retries - 1) {
+                        console.warn(`Network error, retrying in ${delay / 1000}s...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2;
+                    } else {
+                        throw error; // Re-throw if all retries fail
+                    }
+                }
+            }
+            throw new Error('Max retries exceeded');
+        }
+
+        // Event listener for the convert button
+        convertButton.addEventListener('click', async () => {
+            const referenceText = inputReference.value.trim();
+            const current = currentStyle.value;
+            const desired = desiredStyle.value;
+
+            // Basic validation
+            if (!referenceText) {
+                showMessage('Por favor, introduce una referencia bibliográfica.', 'error');
+                return;
+            }
+            if (current === desired) {
+                showMessage('Los estilos de entrada y salida son los mismos. No se necesita conversión.', 'success');
+                outputReference.value = referenceText;
+                return;
+            }
+            if (!supportedStyles.includes(current) || !supportedStyles.includes(desired)) {
+                showMessage('Uno de los estilos seleccionados no es compatible.', 'error');
+                return;
+            }
+
+            showMessage('Convirtiendo referencia...', 'loading');
+            outputReference.value = ''; // Clear previous output
+
+            try {
+                // Construct the prompt for the Gemini API
+                const prompt = `Convierte la siguiente referencia bibliográfica del estilo ${current} al estilo ${desired}. Asegúrate de que el formato sea preciso y completo, incluyendo todos los detalles necesarios (autores, año, título, revista/libro, volumen, número, páginas, etc.) según las convenciones del estilo ${desired}.
+
+Referencia en estilo ${current}:
+${referenceText}
+
+Referencia en estilo ${desired}:`;
+
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+                const payload = { contents: chatHistory };
+                const apiKey = ""; // API key will be provided by Canvas runtime
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                const response = await fetchWithExponentialBackoff(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const converted = result.candidates[0].content.parts[0].text;
+                    outputReference.value = converted.trim();
+                    showMessage('¡Conversión completada con éxito!', 'success');
+                } else {
+                    showMessage('No se pudo convertir la referencia. Inténtalo de nuevo o revisa el formato de entrada.', 'error');
+                    console.error('API response structure unexpected:', result);
+                }
+
+            } catch (error) {
+                showMessage('Error al conectar con el servicio de conversión. Por favor, inténtalo más tarde.', 'error');
+                console.error('Error during API call:', error);
+            }
+        });
+    </script>
+</body>
+</html>
