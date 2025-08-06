@@ -232,7 +232,7 @@ Referencia en estilo ${desired}:`;
                 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
 
                 const payload = { contents: chatHistory };
-                const apiKey = ""; // API key will be provided by Canvas runtime
+                const apiKey = "AIzaSyCzL0iki5D4-L7geIlr8IotYONqBHvZgF0"; // API key will be provided by Canvas runtime
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
                 const response = await fetchWithExponentialBackoff(apiUrl, {
@@ -261,4 +261,5 @@ Referencia en estilo ${desired}:`;
         });
     </script>
 </body>
+
 </html>
